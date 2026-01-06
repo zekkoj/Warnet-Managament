@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Countdown Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .header h1 {
+            margin: 0;
+            color: #333;
+        }
+        .header p {
+            margin: 5px 0 0 0;
+            color: #666;
+            font-size: 14px;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .test-section h2 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .session-monitor {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .session-card {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            background: #f9f9f9;
+        }
+        .session-card.active {
+            border-color: #4CAF50;
+            background: #f1f8f4;
+        }
+        .session-card.paused {
+            border-color: #ff9800;
+            background: #fff8f1;
+        }
+        .session-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .session-header strong {
+            color: #333;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status-badge.active {
+            background: #4CAF50;
+            color: white;
+        }
+        .status-badge.paused {
+            background: #ff9800;
+            color: white;
+        }
+        .status-badge.completed {
+            background: #999;
+            color: white;
+        }
+        .countdown {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            background: white;
+            font-family: 'Courier New', monospace;
+        }
+        .countdown.active {
+            color: #4CAF50;
+        }
+        .countdown.paused {
+            color: #ff9800;
+        }
+        .countdown.danger {
+            color: #f44336;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .stat-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-box .value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .stat-box .label {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        .control-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        button {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        button.pause {
+            background: #ff9800;
+            color: white;
+        }
+        button.extend {
+            background: #2196F3;
+            color: white;
+        }
+        button.complete {
+            background: #f44336;
+            color: white;
+        }
+        button:hover {
+            opacity: 0.8;
+        }
+        .log {
+            background: #000;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            line-height: 1.4;
+        }
+        .log-entry {
+            margin: 2px 0;
+        }
+        .log-entry.error {
+            color: #ff6b6b;
+        }
+        .log-entry.success {
+            color: #51cf66;
+        }
+        .log-entry.info {
+            color: #74c0fc;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧪 Real-Time Countdown Test Dashboard</h1>
+            <p>Monitor dan test real-time countdown functionality</p>
+        </div>
+
+        <!-- Stats -->
+        <div class="test-section">
+            <h2>📊 Overall Stats</h2>
+            <div class="stats">
+                <div class="stat-box">
+                    <div class="label">Total Sessions</div>
+                    <div class="value" id="totalSessions">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="label">Active Sessions</div>
+                    <div class="value" id="activeSessions">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="label">Paused Sessions</div>
+                    <div class="value" id="pausedSessions">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="label">Countdown Updates</div>
+                    <div class="value" id="updateCount">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Session Monitor -->
+        <div class="test-section">
+            <h2>⏱️ Session Countdown Monitor</h2>
+            <div id="sessionMonitor" class="session-monitor">
+                <!-- Sessions will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Test Log -->
+        <div class="test-section">
+            <h2>📝 Test Log</h2>
+            <div class="log" id="testLog">
+                <div class="log-entry info">Test started...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global monitoring state
+        let monitoring = true;
+        let updateCount = 0;
+        let lastTimestamps = {};
+
+        // Utility Functions
+        function formatTime(seconds) {
+            if (seconds <= 0) return '00:00';
+            const hours = Math.floor(seconds / 3600);
+            const mins = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+            if (hours > 0) {
+                return `${String(hours).padStart(2, '0')}h ${String(mins).padStart(2, '0')}m ${String(secs).padStart(2, '0')}s`;
+            } else if (mins > 0) {
+                return `${String(mins).padStart(2, '0')}m ${String(secs).padStart(2, '0')}s`;
+            } else {
+                return `${String(secs).padStart(2, '0')}s`;
+            }
+        }
+
+        function log(message, type = 'info') {
+            const logEl = document.getElementById('testLog');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            const time = new Date().toLocaleTimeString();
+            entry.textContent = `[${time}] ${message}`;
+            logEl.appendChild(entry);
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        async function loadSessions() {
+            try {
+                const response = await fetch('http://127.0.0.1:8000/api/sessions');
+                const data = await response.json();
+                if (data.success) {
+                    return data.data;
+                }
+            } catch (error) {
+                log(`Error loading sessions: ${error.message}`, 'error');
+            }
+            return [];
+        }
+
+        function updateSessionCard(session) {
+            let card = document.getElementById(`session-${session.id}`);
+            if (!card) {
+                card = document.createElement('div');
+                card.id = `session-${session.id}`;
+                card.className = `session-card ${session.status.toLowerCase()}`;
+                document.getElementById('sessionMonitor').appendChild(card);
+            }
+
+            // Calculate remaining time
+            const now = Math.floor(Date.now() / 1000);
+            const startTime = Math.floor(new Date(session.start_time).getTime() / 1000);
+            const durationSeconds = session.duration * 60;
+            const endTime = startTime + durationSeconds;
+            const remainingSeconds = Math.max(0, endTime - now);
+
+            // Check if time is increasing (bug indicator)
+            const lastTime = lastTimestamps[session.id] || remainingSeconds;
+            const isDeclining = remainingSeconds <= lastTime;
+            lastTimestamps[session.id] = remainingSeconds;
+
+            card.className = `session-card ${session.status.toLowerCase()}`;
+            card.innerHTML = `
+                <div class="session-header">
+                    <strong>${session.pc.pc_code} - ${session.user_name}</strong>
+                    <span class="status-badge ${session.status.toLowerCase()}">${session.status}</span>
+                </div>
+                <div style="font-size: 12px; color: #666;">
+                    Tier: ${session.tier} | Cost: Rp ${parseInt(session.total_cost).toLocaleString('id-ID')}
+                </div>
+                <div class="countdown ${session.status.toLowerCase()} ${remainingSeconds < 300 && session.status === 'ACTIVE' ? 'danger' : ''}">
+                    ${formatTime(remainingSeconds)}
+                </div>
+                <div style="font-size: 11px; color: #999; text-align: center;">
+                    ${isDeclining ? '✅ Declining' : '⚠️ Time Increasing'} | 
+                    ${session.status === 'ACTIVE' && remainingSeconds < 300 ? '🚨 CRITICAL' : ''}
+                </div>
+            `;
+        }
+
+        async function monitor() {
+            if (!monitoring) return;
+
+            try {
+                const sessions = await loadSessions();
+                
+                // Update stats
+                document.getElementById('totalSessions').textContent = sessions.length;
+                document.getElementById('activeSessions').textContent = sessions.filter(s => s.status === 'ACTIVE').length;
+                document.getElementById('pausedSessions').textContent = sessions.filter(s => s.status === 'PAUSED').length;
+                
+                updateCount++;
+                document.getElementById('updateCount').textContent = updateCount;
+
+                // Update each session card
+                sessions.forEach(session => {
+                    updateSessionCard(session);
+                });
+
+                log(`Updated ${sessions.length} sessions`, 'success');
+            } catch (error) {
+                log(`Monitor error: ${error.message}`, 'error');
+            }
+
+            // Next update in 1 second
+            setTimeout(monitor, 1000);
+        }
+
+        // Start monitoring
+        log('Initializing real-time countdown monitor...', 'info');
+        monitor();
+
+        // Stop monitoring on page unload
+        window.addEventListener('beforeunload', () => {
+            monitoring = false;
+        });
+    </script>
+</body>
+</html>
