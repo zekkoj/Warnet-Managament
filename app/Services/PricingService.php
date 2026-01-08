@@ -4,6 +4,38 @@ namespace App\Services;
 
 use Carbon\Carbon;
 
+/**
+ * PricingService - Service untuk menghitung harga rental PC
+ * 
+ * Ini adalah CORE BUSINESS LOGIC untuk perhitungan harga yang kompleks
+ * 
+ * STRUKTUR HARGA:
+ * 1. TIER PRICING (Harga Bertingkat):
+ *    - REGULER: Jam 1 = Rp 7,000, Jam 2+ = Rp 6,000/jam
+ *    - VIP:     Jam 1 = Rp 10,000, Jam 2+ = Rp 8,000/jam
+ * 
+ * 2. NIGHT DISCOUNT (22:00 - 05:00):
+ *    - Diskon 20% dari harga base
+ *    - TIDAK ada tier pricing saat night hours (flat rate)
+ * 
+ * 3. MIXED PERIOD CALCULATION:
+ *    - Session bisa melintasi batas waktu (misal: 21:00 - 23:00)
+ *    - System otomatis split jadi multiple periods
+ *    - Setiap period dihitung terpisah dengan rule masing-masing
+ * 
+ * CONTOH PERHITUNGAN:
+ * Session REGULER, 21:00 - 23:30 (150 menit = 2.5 jam → dibulatkan 3 jam)
+ * 
+ * Period 1 (21:00 - 22:00): 1 jam DAY
+ *   - Tier 1: Rp 7,000
+ * 
+ * Period 2 (22:00 - 23:30): 2 jam NIGHT
+ *   - Base: 2 × Rp 7,000 = Rp 14,000
+ *   - Discount 20%: Rp 2,800
+ *   - Subtotal: Rp 11,200
+ * 
+ * TOTAL: Rp 7,000 + Rp 11,200 = Rp 18,200
+ */
 class PricingService
 {
     // Base prices per hour (in Rupiah)
