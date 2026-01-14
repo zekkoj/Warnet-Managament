@@ -502,8 +502,21 @@ function rentalOrderManagement() {
                 return;
             }
             
-            const pricePerHour = this.selectedPC.type === 'VIP' ? 8000 : 5000;
-            this.rentalCost = Math.ceil((this.rentalForm.duration / 60) * pricePerHour);
+            // Harga sesuai PricingService.php
+            const basePrice = this.selectedPC.type === 'VIP' ? 10000 : 7000;  // Jam pertama
+            const tier2Price = this.selectedPC.type === 'VIP' ? 8000 : 6000;  // Jam ke-2+
+            
+            const hours = Math.ceil(this.rentalForm.duration / 60);
+            let cost = 0;
+            
+            if (hours > 0) {
+                cost += basePrice;  // Jam pertama
+                if (hours > 1) {
+                    cost += (hours - 1) * tier2Price;  // Jam berikutnya
+                }
+            }
+            
+            this.rentalCost = cost;
         },
 
         get filteredMenus() {

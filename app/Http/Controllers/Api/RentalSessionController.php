@@ -32,37 +32,46 @@ class RentalSessionController extends Controller
      * Display active rental sessions
      * 
      * Endpoint: GET /api/sessions
-     * Menampilkan semua sesi rental yang masih aktif (belum COMPLETED)
+     * Menampilkan sesi rental (default: hanya yang aktif, bisa diubah dengan parameter)
      * 
      * OPTIMISASI PERFORMA:
      * - Cache 5 detik untuk mengurangi beban database dari frequent polling
      * - Select only necessary columns untuk mengurangi data transfer
      * - Self-healing mechanism sebelum fetch untuk menjaga konsistensi
      * 
-     * @return JsonResponse - daftar sesi aktif dengan info:
+     * Query Parameters:
+     * - include_completed (boolean): Include completed sessions (default: false)
+     * 
+     * @return JsonResponse - daftar sesi dengan info:
      *         - PC yang digunakan
      *         - Waktu mulai dan durasi
-     *         - Status (ACTIVE/PAUSED)
+     *         - Status (ACTIVE/PAUSED/COMPLETED)
      *         - Sisa waktu (remaining_seconds)
      *         - Orders yang terhubung
      */
-    public function index()
+    public function index(Request $request)
     {
         // Self-healing: Ensure PC status consistency before fetching sessions
         // Ini penting untuk memperbaiki data yang tidak konsisten
         // Contoh: PC status IN_USE tapi tidak ada session aktif
         $this->ensureDataConsistency();
 
+        // Check if we should include completed sessions
+        $includeCompleted = $request->query('include_completed', false);
+        
+        // Cache key berbeda tergantung parameter
+        $cacheKey = $includeCompleted ? 'all_sessions' : 'active_sessions';
+
         // Cache for 5 seconds to reduce database load from frequent polling
         // Frontend biasanya polling setiap beberapa detik untuk update countdown timer
-        $sessions = Cache::remember('active_sessions', 5, function () {
+        $sessions = Cache::remember($cacheKey, 5, function () use ($includeCompleted) {
             // Optimized query: only load necessary columns and relations
-            return RentalSession::with(['pc:id,pc_code,type', 'orders'])
-                ->where('status', '!=', 'COMPLETED')
+            $query = RentalSession::with(['pc:id,pc_code,type', 'orders'])
                 ->select([
                     'id', 
                     'pc_id', 
-                    'start_time', 
+                    'start_time',
+                    'end_time', 
                     'duration', 
                     'user_name', 
                     'tier', 
@@ -73,9 +82,14 @@ class RentalSessionController extends Controller
                     'remaining_seconds', // Include remaining_seconds for accurate time tracking
                     'created_at',
                     'updated_at'
-                ])
-                ->orderBy('created_at', 'desc')
-                ->get();
+                ]);
+            
+            // Filter by status if not including completed
+            if (!$includeCompleted) {
+                $query->where('status', '!=', 'COMPLETED');
+            }
+            
+            return $query->orderBy('created_at', 'desc')->get();
         });
 
         return response()->json([

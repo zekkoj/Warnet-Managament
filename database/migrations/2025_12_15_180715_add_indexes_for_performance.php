@@ -15,7 +15,7 @@ return new class extends Migration
         try {
             Schema::table('pcs', function (Blueprint $table) {
                 $table->index('status');
-                $table->index('tier');
+                $table->index('type');
             });
         } catch (\Exception $e) {}
 
@@ -73,42 +73,54 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('pcs', function (Blueprint $table) {
-            $table->dropIndex(['status']);
-            $table->dropIndex(['tier']);
-        });
+        try {
+            Schema::table('pcs', function (Blueprint $table) {
+                $table->dropIndex(['status']);
+                $table->dropIndex(['type']);
+            });
+        } catch (\Exception $e) {}
 
-        Schema::table('rental_sessions', function (Blueprint $table) {
-            $table->dropIndex(['pc_id']);
-            $table->dropIndex(['status']);
-            $table->dropIndex(['start_time']);
-            $table->dropIndex(['status', 'start_time']);
-        });
+        try {
+            Schema::table('rental_sessions', function (Blueprint $table) {
+                $table->dropIndex(['pc_id']);
+                $table->dropIndex(['status']);
+                $table->dropIndex(['start_time']);
+                $table->dropIndex(['status', 'start_time']);
+            });
+        } catch (\Exception $e) {}
 
-        Schema::table('orders', function (Blueprint $table) {
-            $table->dropIndex(['status']);
-            $table->dropIndex(['payment_status']);
-            $table->dropIndex(['created_at']);
-            $table->dropIndex(['status', 'created_at']);
-        });
+        try {
+            Schema::table('orders', function (Blueprint $table) {
+                $table->dropIndex(['status']);
+                $table->dropIndex(['payment_status']);
+                $table->dropIndex(['created_at']);
+                $table->dropIndex(['status', 'created_at']);
+            });
+        } catch (\Exception $e) {}
 
-        Schema::table('order_items', function (Blueprint $table) {
-            $table->dropIndex(['order_id']);
-            $table->dropIndex(['menu_id']);
-        });
+        try {
+            Schema::table('order_items', function (Blueprint $table) {
+                $table->dropIndex(['order_id']);
+                $table->dropIndex(['menu_id']);
+            });
+        } catch (\Exception $e) {}
 
-        Schema::table('payments', function (Blueprint $table) {
-            $table->dropIndex(['order_id']);
-            $table->dropIndex(['rental_session_id']);
-            $table->dropIndex(['status']);
-            $table->dropIndex(['method']);
-            $table->dropIndex(['transaction_ref']);
-        });
+        try {
+            Schema::table('payments', function (Blueprint $table) {
+                $table->dropIndex(['order_id']);
+                $table->dropIndex(['rental_session_id']);
+                $table->dropIndex(['status']);
+                $table->dropIndex(['method']);
+                $table->dropIndex(['transaction_ref']);
+            });
+        } catch (\Exception $e) {}
 
-        Schema::table('menus', function (Blueprint $table) {
-            $table->dropIndex(['category']);
-            $table->dropIndex(['is_available']);
-            $table->dropIndex(['category', 'is_available']);
-        });
+        try {
+            Schema::table('menus', function (Blueprint $table) {
+                $table->dropIndex(['category']);
+                $table->dropIndex(['is_available']);
+                $table->dropIndex(['category', 'is_available']);
+            });
+        } catch (\Exception $e) {}
     }
 };

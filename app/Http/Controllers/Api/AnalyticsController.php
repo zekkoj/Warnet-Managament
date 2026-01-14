@@ -7,6 +7,7 @@ use App\Models\RevenueLog;
 use App\Models\RentalSession;
 use App\Models\Order;
 use App\Services\RevenueService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -20,7 +21,10 @@ class AnalyticsController extends Controller
     {
         $period = $request->query('period', 'daily'); // daily, weekly, monthly
         $startDate = $request->query('start_date', now()->startOfMonth());
-        $endDate = $request->query('end_date', now()->endOfMonth());
+        // CRITICAL: Always parse end_date and apply endOfDay to include all data from that day
+        $endDate = $request->has('end_date') 
+            ? Carbon::parse($request->query('end_date'))->endOfDay()
+            : now()->endOfDay();
 
         $driver = DB::getDriverName();
 
@@ -80,7 +84,9 @@ class AnalyticsController extends Controller
     public function pcUsage(Request $request)
     {
         $startDate = $request->query('start_date', now()->startOfMonth());
-        $endDate = $request->query('end_date', now()->endOfMonth());
+        $endDate = $request->has('end_date')
+            ? Carbon::parse($request->query('end_date'))->endOfDay()
+            : now()->endOfDay();
 
         $driver = DB::getDriverName();
 
@@ -148,7 +154,9 @@ class AnalyticsController extends Controller
     public function fAndB(Request $request)
     {
         $startDate = $request->query('start_date', now()->startOfMonth());
-        $endDate = $request->query('end_date', now()->endOfMonth());
+        $endDate = $request->has('end_date')
+            ? Carbon::parse($request->query('end_date'))->endOfDay()
+            : now()->endOfDay();
 
         // Get all F&B analytics using RevenueService (single source of truth)
         $topItems = RevenueService::getTopFbItems($startDate, $endDate, 10);

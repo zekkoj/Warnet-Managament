@@ -63,7 +63,6 @@
                 <option value="all">All Sessions</option>
                 <option value="ACTIVE">Active</option>
                 <option value="PAUSED">Paused</option>
-                <option value="COMPLETED">Completed</option>
             </select>
 
             <select x-model="tierFilter" @change="filterSessions()" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
@@ -74,9 +73,6 @@
         </div>
 
         <div class="flex items-center space-x-2">
-            <button @click="showCreateModal = true" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                <i class="fas fa-plus mr-2"></i>New Session
-            </button>
             <button @click="refreshData()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
                 <i class="fas fa-sync-alt mr-2"></i>Refresh
             </button>
@@ -450,7 +446,8 @@ function sessionsManagement() {
         async loadSessions() {
             try {
                 console.log('Loading sessions...');
-                const response = await apiCall('/sessions');
+                // Include completed sessions untuk menghitung total revenue
+                const response = await apiCall('/sessions?include_completed=true');
                 console.log('Sessions API response:', response);
                 if (response.success) {
                     // Hitung remaining time berdasarkan start_time dan duration
@@ -526,7 +523,7 @@ function sessionsManagement() {
         async syncWithServer() {
             try {
                 console.log('Syncing with server...');
-                const response = await apiCall('/sessions');
+                const response = await apiCall('/sessions?include_completed=true');
                 if (response.success) {
                     const now = Math.floor(Date.now() / 1000);
                     
@@ -640,21 +637,46 @@ function sessionsManagement() {
 
         calculateStats() {
             this.stats.active = this.sessions.filter(s => s.status === 'ACTIVE').length;
-            this.stats.totalRevenue = this.sessions.reduce((sum, s) => sum + parseFloat(s.total_cost || 0), 0);
-            
-            const activeSessions = this.sessions.filter(s => s.status === 'ACTIVE');
-            this.stats.avgDuration = activeSessions.length > 0 
-                ? Math.round(activeSessions.reduce((sum, s) => sum + s.duration, 0) / activeSessions.length / 60) 
-                : 0;
             
             const today = new Date().toDateString();
-            this.stats.completedToday = this.sessions.filter(s => 
-                s.status === 'COMPLETED' && new Date(s.end_time).toDateString() === today
-            ).length;
+            
+            // Total Revenue: sum dari COMPLETED sessions HARI INI saja (reset setiap hari)
+            const completedToday = this.sessions.filter(s => 
+                s.status === 'COMPLETED' && 
+                s.end_time && 
+                new Date(s.end_time).toDateString() === today
+            );
+            
+            console.log('Completed sessions TODAY for revenue:', completedToday);
+            
+            this.stats.totalRevenue = completedToday.reduce((sum, s) => {
+                const cost = parseFloat(s.total_cost || 0);
+                console.log(`Session ${s.id}: cost = ${cost}`);
+                return sum + cost;
+            }, 0);
+            
+            console.log('Total Revenue TODAY calculated:', this.stats.totalRevenue);
+            
+            // Avg Duration: dari semua sessions (completed dan active)
+            const allSessions = this.sessions.filter(s => s.status === 'COMPLETED' || s.status === 'ACTIVE');
+            this.stats.avgDuration = allSessions.length > 0 
+                ? Math.round(allSessions.reduce((sum, s) => sum + s.duration, 0) / allSessions.length / 60) 
+                : 0;
+            
+            // Completed Today: jumlah sessions yang completed hari ini
+            this.stats.completedToday = completedToday.length;
+            
+            console.log('Stats:', this.stats);
         },
 
         filterSessions() {
             this.filteredSessions = this.sessions.filter(session => {
+                // ALWAYS hide COMPLETED sessions from table view
+                // (but keep them in this.sessions for stats calculation)
+                if (session.status === 'COMPLETED') {
+                    return false;
+                }
+                
                 const statusMatch = this.statusFilter === 'all' || session.status === this.statusFilter;
                 const tierMatch = this.tierFilter === 'all' || session.tier === this.tierFilter;
                 return statusMatch && tierMatch;

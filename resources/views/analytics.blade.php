@@ -179,7 +179,7 @@
 function analytics() {
     return {
         dateRange: {
-            start: new Date(new Date().setDate(new Date().getDate() - 7)).toISOString().split('T')[0],
+            start: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
             end: new Date().toISOString().split('T')[0]
         },
         revenue: {
@@ -257,10 +257,12 @@ function analytics() {
         async loadRevenue() {
             try {
                 const response = await apiCall(`/analytics/revenue?start_date=${this.dateRange.start}&end_date=${this.dateRange.end}`);
+                console.log('Revenue API Response:', response);
                 if (response.success) {
                     this.revenue.total = parseFloat(response.summary.total_revenue || 0);
                     this.revenue.pcRental = parseFloat(response.summary.pc_rental_revenue || 0);
                     this.revenue.fnb = parseFloat(response.summary['f&b_revenue'] || 0);
+                    console.log('Revenue Data:', this.revenue);
                     
                     // Process trend data from pc_revenue and f&b_revenue
                     const trendMap = {};

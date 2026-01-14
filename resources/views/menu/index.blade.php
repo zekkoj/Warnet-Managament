@@ -57,9 +57,14 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         <template x-for="item in filteredMenu" :key="item.id">
             <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition">
-                <!-- Image Placeholder -->
-                <div class="h-48 bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-                    <i class="fas fa-utensils text-6xl text-gray-400"></i>
+                <!-- Image -->
+                <div class="h-48 bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center overflow-hidden">
+                    <template x-if="item.image_url">
+                        <img :src="item.image_url" :alt="item.name" class="w-full h-full object-cover">
+                    </template>
+                    <template x-if="!item.image_url">
+                        <i class="fas fa-utensils text-6xl text-gray-400"></i>
+                    </template>
                 </div>
 
                 <!-- Content -->
@@ -150,6 +155,14 @@
                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg"></textarea>
                     </div>
 
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Image URL</label>
+                        <input type="text" x-model="formData.image_url" 
+                               placeholder="e.g., /images/menus/Nasi Goreng.png"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                        <p class="text-xs text-gray-500 mt-1">Path to menu image</p>
+                    </div>
+
                     <div class="flex items-center">
                         <input type="checkbox" x-model="formData.available" id="available"
                                class="w-4 h-4 text-blue-600 rounded">
@@ -186,6 +199,7 @@ function menuManagement() {
             category: '',
             price: 0,
             description: '',
+            image_url: '',
             available: true
         },
         stats: {
@@ -293,6 +307,7 @@ function menuManagement() {
                 category: '',
                 price: 0,
                 description: '',
+                image_url: '',
                 available: true
             };
         }
